@@ -112,6 +112,8 @@ class _CustomScrollViewState extends State<_CustomScrollView>
 
   FocusNode _focusNode;
 
+  ScrollController _scrollController;
+
   @override
   void initState() {
     _previousViewKey = GlobalKey<_CalendarViewState>();
@@ -126,7 +128,6 @@ class _CustomScrollViewState extends State<_CustomScrollView>
           ? _moveToNextViewWithAnimation
           : _moveToPreviousViewWithAnimation;
     }
-
     _updateCalendarStateDetails = _UpdateCalendarStateDetails();
     _currentChildIndex = 1;
     _updateVisibleDates();
@@ -143,6 +144,11 @@ class _CustomScrollViewState extends State<_CustomScrollView>
 
     _timeRegions = _cloneList(widget.specialRegions);
     _resourceCollection = _cloneList(widget.calendar.dataSource?.resources);
+    _scrollController = ScrollController();
+
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+      _scrollController.jumpTo(200);
+    });
 
     super.initState();
   }
@@ -381,15 +387,62 @@ class _CustomScrollViewState extends State<_CustomScrollView>
           ? _onVerticalEnd
           : null,
     );
+    double _intervalHeight = _getTimeIntervalHeight(
+        widget.calendar,
+        widget.view,
+        widget.width,
+        widget.height,
+        _previousViewVisibleDates.length,
+        0, //TODO: _allDayHeight,
+        widget.isMobilePlatform);
+    double _horizontalCount = _getHorizontalLinesCount(
+        widget.calendar.timeSlotViewSettings, widget.view);
+    double viewHeaderHeight =
+        _getViewHeaderHeight(widget.calendar.viewHeaderHeight, widget.view);
+
+    // double timeLabelWidth = _getTimeLabelWidth(
+    //     widget.calendar.timeSlotViewSettings.timeRulerSize, widget.view);
+
+    double timeLabelWidth = 50;
+    // double delta = 17;
+    if (widget.view == CalendarView.day) {
+      leftPosition = leftPosition + (2 * timeLabelWidth);
+      rightPosition = rightPosition + timeLabelWidth;
+    }
 
     return Stack(
       children: <Widget>[
+        // Today highlight
+
+        // Positioned(
+        //   child: RepaintBoundary(
+        //     child: CustomPaint(
+        //       painter: _TimeRulerView(
+        //           _horizontalCount,
+        //           _intervalHeight,
+        //           widget.calendar.timeSlotViewSettings,
+        //           widget.calendar.cellBorderColor,
+        //           false,
+        //           widget.locale,
+        //           widget.calendarTheme,
+        //           _isTimelineView(widget.view),
+        //           _previousViewVisibleDates,
+        //           widget.textScaleFactor),
+        //       size: Size(50, _intervalHeight),
+        //     ),
+        //   ),
+        // ),
+
         Positioned(
             left: leftPosition,
             right: rightPosition,
             bottom: bottomPosition,
             top: topPosition,
-            child: RawKeyboardListener(
+            child: Container(
+                //color: Colors.blue,
+                // decoration:
+                //     BoxDecoration(border: Border.all(color: Colors.blueAccent)),
+                child: RawKeyboardListener(
               focusNode: _focusNode,
               onKey: _onKeyDown,
               child: isTimelineView
@@ -413,7 +466,77 @@ class _CustomScrollViewState extends State<_CustomScrollView>
                           child: customScrollWidget),
                     )
                   : customScrollWidget,
-            )),
+            ))),
+
+        widget.view == CalendarView.day
+            ? Positioned(
+                //bottom: bottomPosition,
+                top: 0,
+                left: 0,
+                height: viewHeaderHeight,
+                child: Container(
+                  color: widget.calendar.viewHeaderStyle.backgroundColor ??
+                      widget.calendarTheme.viewHeaderBackgroundColor,
+                  //color: Colors.red,
+                  child: RepaintBoundary(
+                    child: CustomPaint(
+                        painter: _ViewHeaderViewPainter(
+                            _currentViewVisibleDates,
+                            widget.view,
+                            widget.calendar.viewHeaderStyle,
+                            widget.calendar.timeSlotViewSettings,
+                            timeLabelWidth,
+                            viewHeaderHeight,
+                            widget.calendar.monthViewSettings,
+                            false,
+                            widget.locale,
+                            widget.calendarTheme,
+                            widget.calendar.todayHighlightColor ??
+                                widget.calendarTheme.todayHighlightColor,
+                            widget.calendar.todayTextStyle,
+                            widget.calendar.cellBorderColor,
+                            widget.calendar.minDate,
+                            widget.calendar.maxDate,
+                            ValueNotifier<Offset>(null),
+                            widget.textScaleFactor),
+                        size: Size(MediaQuery.of(context).size.width,
+                            viewHeaderHeight)),
+                  ),
+                ),
+              )
+            : Container(),
+
+        Positioned(
+            bottom: bottomPosition,
+            top: topPosition + viewHeaderHeight,
+            left: 0,
+            child: Container(
+                color: Colors.white,
+                width: timeLabelWidth,
+                height: MediaQuery.of(context).size.height,
+                child: SingleChildScrollView(
+                    scrollDirection: Axis.vertical,
+                    controller: _scrollController,
+                    physics: NeverScrollableScrollPhysics(),
+                    child: Container(
+                      child: RepaintBoundary(
+                        child: CustomPaint(
+                          painter: _TimeRulerView(
+                              _horizontalCount,
+                              _intervalHeight,
+                              widget.calendar.timeSlotViewSettings,
+                              widget.calendar.cellBorderColor,
+                              false, //TODO: isRTL,
+                              widget.locale,
+                              widget.calendarTheme,
+                              _isTimelineView(widget.view),
+                              _currentViewVisibleDates,
+                              widget.textScaleFactor),
+                          size: Size(timeLabelWidth,
+                              _intervalHeight * _horizontalCount), // toDo
+                        ),
+                      ),
+                    )))),
       ],
     );
   }
@@ -756,6 +879,8 @@ class _CustomScrollViewState extends State<_CustomScrollView>
   }
 
   List<Widget> _addViews() {
+    double timeLabelWidth = _getTimeLabelWidth(
+        widget.calendar.timeSlotViewSettings.timeRulerSize, widget.view);
     _children = _children ?? <_CalendarView>[];
 
     if (_children != null && _children.isEmpty) {
@@ -763,7 +888,7 @@ class _CustomScrollViewState extends State<_CustomScrollView>
         widget.calendar,
         widget.view,
         _previousViewVisibleDates,
-        widget.width,
+        widget.width - timeLabelWidth,
         widget.height,
         widget.agendaSelectedDate,
         widget.locale,
@@ -786,12 +911,15 @@ class _CustomScrollViewState extends State<_CustomScrollView>
         getCalendarState: (_UpdateCalendarStateDetails details) {
           _getCalendarViewStateDetails(details);
         },
+        scroll: (double y) {
+          _scrollController.jumpTo(y);
+        },
       );
       _currentView = _CalendarView(
         widget.calendar,
         widget.view,
         _visibleDates,
-        widget.width,
+        widget.width - timeLabelWidth,
         widget.height,
         widget.agendaSelectedDate,
         widget.locale,
@@ -813,12 +941,15 @@ class _CustomScrollViewState extends State<_CustomScrollView>
         getCalendarState: (_UpdateCalendarStateDetails details) {
           _getCalendarViewStateDetails(details);
         },
+        scroll: (double y) {
+          _scrollController.jumpTo(y);
+        },
       );
       _nextView = _CalendarView(
         widget.calendar,
         widget.view,
         _nextViewVisibleDates,
-        widget.width,
+        widget.width - timeLabelWidth,
         widget.height,
         widget.agendaSelectedDate,
         widget.locale,
@@ -840,6 +971,9 @@ class _CustomScrollViewState extends State<_CustomScrollView>
         },
         getCalendarState: (_UpdateCalendarStateDetails details) {
           _getCalendarViewStateDetails(details);
+        },
+        scroll: (double y) {
+          _scrollController.jumpTo(y);
         },
       );
 
@@ -907,6 +1041,9 @@ class _CustomScrollViewState extends State<_CustomScrollView>
         getCalendarState: (_UpdateCalendarStateDetails details) {
           _getCalendarViewStateDetails(details);
         },
+        scroll: (double y) {
+          _scrollController.jumpTo(y);
+        },
       );
 
       _children[index] = view;
@@ -939,6 +1076,9 @@ class _CustomScrollViewState extends State<_CustomScrollView>
           },
           getCalendarState: (_UpdateCalendarStateDetails details) {
             _getCalendarViewStateDetails(details);
+          },
+          scroll: (double y) {
+            _scrollController.jumpTo(y);
           },
         );
         _children[index] = view;
@@ -983,6 +1123,9 @@ class _CustomScrollViewState extends State<_CustomScrollView>
         },
         getCalendarState: (_UpdateCalendarStateDetails details) {
           _getCalendarViewStateDetails(details);
+        },
+        scroll: (double y) {
+          _scrollController.jumpTo(y);
         },
       );
 

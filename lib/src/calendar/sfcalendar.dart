@@ -163,6 +163,7 @@ class SfCalendar extends StatefulWidget {
     this.monthCellBuilder,
     this.appointmentBuilder,
     this.timeRegionBuilder,
+    this.showCurrentTimeIndicator = true,
     CalendarHeaderStyle headerStyle,
     ViewHeaderStyle viewHeaderStyle,
     TimeSlotViewSettings timeSlotViewSettings,
@@ -240,6 +241,24 @@ class SfCalendar extends StatefulWidget {
   ///
   /// ```
   final List<CalendarView> allowedViews;
+
+  /// Displays an indicator that shows the current time in the time slot views
+  /// of [SfCalendar]. By default, the indicator color matches the
+  /// [todayHighlightColor].
+  ///
+  /// Defaults to `true`.
+  ///
+  /// ``` dart
+  /// Widget build(BuildContext context) {
+  ///    return Container(
+  ///      child: SfCalendar(
+  ///        view: CalendarView.day,
+  ///        showCurrentTimeIndicator: true),
+  ///    );
+  ///  }
+  ///
+  /// ```
+  final bool showCurrentTimeIndicator;
 
   /// Determines whether view switching is allowed among [CalendarView]s on
   /// interaction.
@@ -3239,7 +3258,9 @@ class _SfCalendarState extends State<SfCalendar>
           ? _nextDates[0]
           : (index < 0
               ? _previousDates[-index - 2]
-              : index >= _nextDates.length - 1 ? null : _nextDates[index + 1]);
+              : index >= _nextDates.length - 1
+                  ? null
+                  : _nextDates[index + 1]);
 
       /// Check the following scenarios for rendering month label at last when
       /// the week holds different month dates
@@ -5252,6 +5273,7 @@ class _SfCalendarState extends State<SfCalendar>
   //// Handles the onTap callback for agenda view.
   void _handleTapForAgenda(TapUpDetails details, DateTime selectedDate) {
     _removeDatePicker();
+
     if (widget.allowViewNavigation &&
         ((!_isRTL && details.localPosition.dx < _agendaDateViewWidth) ||
             (_isRTL &&

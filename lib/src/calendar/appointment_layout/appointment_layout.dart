@@ -168,7 +168,8 @@ class _AppointmentLayoutState extends State<_AppointmentLayout> {
 
         /// Throw exception when builder return widget is null.
         assert(child != null, 'Widget must not be null');
-        _children.add(RepaintBoundary(child: child));
+        _children.add(
+            RepaintBoundary(child: Container(color: Colors.red, child: child)));
       }
 
       if (_monthAppointmentCountViews != null) {
@@ -233,14 +234,15 @@ class _AppointmentLayoutState extends State<_AppointmentLayout> {
     if (_appointmentCollection == null) {
       return null;
     }
-
     _AppointmentView selectedAppointmentView;
     for (int i = 0; i < _appointmentCollection.length; i++) {
       final _AppointmentView appointmentView = _appointmentCollection[i];
       if (appointmentView.appointment != null &&
           appointmentView.appointmentRect != null &&
           appointmentView.appointmentRect.left <= x &&
-          appointmentView.appointmentRect.right >= x &&
+          appointmentView.appointmentRect.left +
+                  appointmentView.appointmentRect.width >=
+              x &&
           appointmentView.appointmentRect.top <= y &&
           appointmentView.appointmentRect.bottom >= y) {
         selectedAppointmentView = appointmentView;
@@ -476,7 +478,12 @@ class _AppointmentLayoutState extends State<_AppointmentLayout> {
   void _updateDayAppointmentDetails(List<Appointment> visibleAppointments) {
     final double timeLabelWidth = _getTimeLabelWidth(
         widget.calendar.timeSlotViewSettings.timeRulerSize, widget.view);
-    final double width = widget.width - timeLabelWidth;
+    //final double width = widget.width - timeLabelWidth;
+
+    final double width =
+        widget.view == CalendarView.day || widget.view == CalendarView.week
+            ? widget.width
+            : widget.width - timeLabelWidth;
     _setAppointmentPositionAndMaxPosition(
         _appointmentCollection,
         widget.calendar,
@@ -486,7 +493,11 @@ class _AppointmentLayoutState extends State<_AppointmentLayout> {
         widget.timeIntervalHeight);
     final double cellWidth = width / widget.visibleDates.length;
     final double cellHeight = widget.timeIntervalHeight;
-    double xPosition = timeLabelWidth;
+    //double xPosition = timeLabelWidth;
+    double xPosition =
+        widget.view == CalendarView.day || widget.view == CalendarView.week
+            ? 0
+            : timeLabelWidth;
     double yPosition = 0;
     final double cellEndPadding = widget.calendar.cellEndPadding;
 
@@ -541,9 +552,18 @@ class _AppointmentLayoutState extends State<_AppointmentLayout> {
             (appointmentView.position * appointmentWidth) +
             cellEndPadding;
       } else {
-        xPosition = column * cellWidth +
-            (appointmentView.position * appointmentWidth) +
-            timeLabelWidth;
+        // xPosition = column * cellWidth +
+        //     (appointmentView.position * appointmentWidth) +
+        //     timeLabelWidth;
+        if (widget.view == CalendarView.day ||
+            widget.view == CalendarView.week) {
+          xPosition = column * cellWidth +
+              (appointmentView.position * appointmentWidth);
+        } else {
+          xPosition = column * cellWidth +
+              (appointmentView.position * appointmentWidth) +
+              timeLabelWidth;
+        }
       }
 
       yPosition = row * cellHeight;

@@ -48,6 +48,7 @@ part 'src/calendar/views/time_ruler_view.dart';
 part 'src/calendar/views/schedule_view.dart';
 part 'src/calendar/views/custom_calendar_button.dart';
 part 'src/calendar/views/multi_child_container.dart';
+part 'src/calendar/views/current_time_indicator.dart';
 
 part './src/calendar/settings/time_slot_view_settings.dart';
 part './src/calendar/settings/month_view_settings.dart';
@@ -63,6 +64,7 @@ part './src/calendar/appointment_engine/recurrence_helper.dart';
 part './src/calendar/appointment_engine/recurrence_properties.dart';
 part './src/calendar/appointment_engine/month_appointment_helper.dart';
 part './src/calendar/appointment_engine/calendar_datasource.dart';
+part './src/calendar/appointment_engine/calendar_view_helper.dart';
 
 part 'src/calendar/resource_view/calendar_resource.dart';
 part 'src/calendar/resource_view/resource_view.dart';

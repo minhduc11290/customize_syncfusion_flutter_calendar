@@ -102,8 +102,12 @@ class _TimeRulerView extends CustomPainter {
       final String time = DateFormat(timeSlotViewSettings.timeFormat, locale)
           .format(date)
           .toString();
+      print("minute");
+      print(minute);
       final TextSpan span = TextSpan(
-        text: time,
+        text: (timeSlotViewSettings.hiddenHalfTime && minute % 60 != 0)
+            ? ""
+            : time,
         style: timeTextStyle,
       );
 

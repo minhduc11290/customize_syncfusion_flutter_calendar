@@ -337,7 +337,7 @@ class _CalendarHeaderViewState extends State<_CalendarHeaderView> {
             color: widget.headerStyle.backgroundColor ??
                 widget.calendarTheme.headerBackgroundColor,
             width: (widget.view == CalendarView.week
-                ? 180
+                ? 190
                 : 120), // isCenterAlignment && headerWidth > 200 ? 200 : headerWidth,
             height: headerHeight,
             padding: const EdgeInsets.all(2),
@@ -572,48 +572,65 @@ class _CalendarHeaderViewState extends State<_CalendarHeaderView> {
           )),
     );
 
-    final Widget todayIcon = Container(
-      alignment: Alignment.center,
-      color: widget.headerStyle.backgroundColor ??
-          widget.calendarTheme.headerBackgroundColor,
-      width: todayIconWidth,
-      height: headerHeight,
-      padding: const EdgeInsets.all(2),
-      child: Material(
-          color: widget.headerStyle.backgroundColor ??
-              widget.calendarTheme.headerBackgroundColor,
-          child: InkWell(
-            splashFactory: _CustomSplashFactory(),
-            onTap: () {
-              widget.removePicker();
-              widget.controller.displayDate = DateTime.now();
-            },
-            child: Semantics(
-              label: todayText,
-              child: useMobilePlatformUI
-                  ? Container(
-                      width: todayIconWidth,
-                      height: headerHeight,
-                      alignment: Alignment.center,
-                      child: Icon(
-                        Icons.today,
-                        color: style.color,
-                        size: style.fontSize,
-                      ))
-                  : Container(
-                      width: todayIconWidth,
-                      alignment: Alignment.center,
-                      child: Text(
-                        todayText,
-                        style: TextStyle(
-                            color: headerTextColor,
-                            fontSize: defaultCalendarViewTextSize),
-                        maxLines: 1,
-                        textDirection: TextDirection.ltr,
-                      )),
-            ),
-          )),
-    );
+    // final Widget todayIcon = Container(
+    //   alignment: Alignment.center,
+    //   color: widget.headerStyle.backgroundColor ??
+    //       widget.calendarTheme.headerBackgroundColor,
+    //   width: todayIconWidth,
+    //   height: headerHeight,
+    //   padding: const EdgeInsets.all(2),
+    //   child: Material(
+    //       color: widget.headerStyle.backgroundColor ??
+    //           widget.calendarTheme.headerBackgroundColor,
+    //       child: InkWell(
+    //         splashFactory: _CustomSplashFactory(),
+    //         onTap: () {
+    //           widget.removePicker();
+    //           widget.controller.displayDate = DateTime.now();
+    //         },
+    //         child: Semantics(
+    //           label: todayText,
+    //           child: useMobilePlatformUI
+    //               ? Container(
+    //                   width: todayIconWidth,
+    //                   height: headerHeight,
+    //                   alignment: Alignment.center,
+    //                   child: Icon(
+    //                     Icons.today,
+    //                     color: style.color,
+    //                     size: style.fontSize,
+    //                   ))
+    //               : Container(
+    //                   width: todayIconWidth,
+    //                   alignment: Alignment.center,
+    //                   child: Text(
+    //                     todayText,
+    //                     style: TextStyle(
+    //                         color: headerTextColor,
+    //                         fontSize: defaultCalendarViewTextSize),
+    //                     maxLines: 1,
+    //                     textDirection: TextDirection.ltr,
+    //                   )),
+    //         ),
+    //       )),
+    // );
+
+    final Widget todayIcon = GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: () {
+          widget.removePicker();
+          widget.controller.displayDate = DateTime.now();
+        },
+        child: Container(
+            width: 80,
+            height: 28,
+            decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(30),
+                color: Color.fromRGBO(232, 235, 253, 1)),
+            child: Center(
+                child: Text("Today",
+                    style:
+                        TextStyle(color: Color.fromRGBO(41, 114, 250, 1))))));
 
     final Widget dividerWidget = widget.showDatePickerButton &&
             isNeedViewSwitchOption &&

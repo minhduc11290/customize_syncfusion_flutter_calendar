@@ -459,6 +459,7 @@ double _getTimeLabelWidth(double timeLabelViewWidth, CalendarView view) {
       return 30;
     case CalendarView.day:
     case CalendarView.week:
+      return 0;
     case CalendarView.workWeek:
       return 50;
     case CalendarView.schedule:

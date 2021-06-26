@@ -41,20 +41,22 @@ class TimeSlotViewSettings {
   /// Creates a timeslot view settings for calendar.
   ///
   /// The properties allows to customize the timeslot views of [SfCalendar].
-  const TimeSlotViewSettings(
-      {this.startHour = 0,
-      this.endHour = 24,
-      this.nonWorkingDays = const <int>[DateTime.saturday, DateTime.sunday],
-      this.timeFormat = 'h a',
-      this.timeInterval = const Duration(minutes: 60),
-      this.timeIntervalHeight = 40,
-      this.timeIntervalWidth = -2,
-      this.timelineAppointmentHeight = -1,
-      this.minimumAppointmentDuration,
-      this.dateFormat = 'd',
-      this.dayFormat = 'EE',
-      this.timeRulerSize = -1,
-      this.timeTextStyle});
+  const TimeSlotViewSettings({
+    this.startHour = 0,
+    this.endHour = 24,
+    this.nonWorkingDays = const <int>[DateTime.saturday, DateTime.sunday],
+    this.timeFormat = 'h a',
+    this.timeInterval = const Duration(minutes: 60),
+    this.timeIntervalHeight = 40,
+    this.timeIntervalWidth = -2,
+    this.timelineAppointmentHeight = -1,
+    this.minimumAppointmentDuration,
+    this.dateFormat = 'd',
+    this.dayFormat = 'EE',
+    this.timeRulerSize = -1,
+    this.timeTextStyle,
+    this.hiddenHalfTime = false,
+  });
 
   /// The start hour for the time slot views in [SfCalendar].
   ///
@@ -475,6 +477,8 @@ class TimeSlotViewSettings {
   /// ```
   final TextStyle timeTextStyle;
 
+  final bool hiddenHalfTime;
+
   @override
   bool operator ==(dynamic other) {
     if (identical(this, other)) {
@@ -497,7 +501,8 @@ class TimeSlotViewSettings {
         otherStyle.dateFormat == dateFormat &&
         otherStyle.dayFormat == dayFormat &&
         otherStyle.timeRulerSize == timeRulerSize &&
-        otherStyle.timeTextStyle == timeTextStyle;
+        otherStyle.timeTextStyle == timeTextStyle &&
+        otherStyle.hiddenHalfTime == hiddenHalfTime;
   }
 
   @override
@@ -515,6 +520,7 @@ class TimeSlotViewSettings {
         dateFormat,
         dayFormat,
         timeRulerSize,
-        timeTextStyle);
+        timeTextStyle,
+        hiddenHalfTime);
   }
 }

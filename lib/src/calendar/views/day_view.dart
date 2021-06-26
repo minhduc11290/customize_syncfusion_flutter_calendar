@@ -23,7 +23,8 @@ class _TimeSlotWidget extends StatefulWidget {
       this.textScaleFactor,
       this.timeRegionBuilder,
       this.width,
-      this.height);
+      this.height,
+      this.calendarView);
 
   final List<DateTime> visibleDates;
   final double horizontalLinesCount;
@@ -39,7 +40,7 @@ class _TimeSlotWidget extends StatefulWidget {
   final TimeRegionBuilder timeRegionBuilder;
   final double width;
   final double height;
-
+  final CalendarView calendarView;
   @override
   _TimeSlotWidgetState createState() => _TimeSlotWidgetState();
 }
@@ -112,6 +113,7 @@ class _TimeSlotWidgetState extends State<_TimeSlotWidget> {
       widget.width,
       widget.height,
       _specialRegionViews,
+      widget.calendarView,
       widgets: _children,
     );
   }
@@ -233,6 +235,12 @@ class _TimeSlotWidgetState extends State<_TimeSlotWidget> {
           startXPosition = widget.width - (startXPosition + cellWidth);
         }
 
+        if (j == endIndex) {
+          print("End Calendar");
+          print(startXPosition);
+          print(startXPosition + cellWidth);
+        }
+
         final Rect rect = Rect.fromLTRB(startXPosition, startPosition,
             startXPosition + cellWidth, endPosition);
         _specialRegionViews
@@ -258,6 +266,7 @@ class _TimeSlotRenderWidget extends MultiChildRenderObjectWidget {
       this.width,
       this.height,
       this.specialRegionBounds,
+      this.calendarView,
       {List<Widget> widgets})
       : super(children: widgets);
 
@@ -275,6 +284,7 @@ class _TimeSlotRenderWidget extends MultiChildRenderObjectWidget {
   final double width;
   final double height;
   final List<_TimeRegionView> specialRegionBounds;
+  final CalendarView calendarView;
 
   @override
   _TimeSlotRenderObject createRenderObject(BuildContext context) {
@@ -292,7 +302,8 @@ class _TimeSlotRenderWidget extends MultiChildRenderObjectWidget {
         textScaleFactor,
         width,
         height,
-        specialRegionBounds);
+        specialRegionBounds,
+        calendarView);
   }
 
   @override
@@ -312,7 +323,8 @@ class _TimeSlotRenderWidget extends MultiChildRenderObjectWidget {
       ..textScaleFactor = textScaleFactor
       ..width = width
       ..height = height
-      ..specialRegionBounds = specialRegionBounds;
+      ..specialRegionBounds = specialRegionBounds
+      ..calendarView = calendarView;
   }
 }
 
@@ -331,8 +343,9 @@ class _TimeSlotRenderObject extends _CustomCalendarRenderObject {
       this._textScaleFactor,
       this._width,
       this._height,
-      this.specialRegionBounds);
-
+      this.specialRegionBounds,
+      this.calendarView);
+  CalendarView calendarView;
   List<DateTime> _visibleDates;
 
   List<DateTime> get visibleDates => _visibleDates;
@@ -610,12 +623,88 @@ class _TimeSlotRenderObject extends _CustomCalendarRenderObject {
     _linePainter.strokeWidth = 0.5;
     _linePainter.strokeCap = StrokeCap.round;
     _linePainter.color = cellBorderColor ?? calendarTheme.cellBorderColor;
+    print("horizontalLinesCount");
+    print(horizontalLinesCount);
 
     for (int i = 1; i <= horizontalLinesCount; i++) {
-      final Offset start = Offset(isRTL ? 0 : timeLabelWidth, y);
-      final Offset end =
-          Offset(isRTL ? size.width - timeLabelWidth : size.width, y);
-      canvas.drawLine(start, end, _linePainter);
+      if (calendarView == CalendarView.week) {
+        x = 0;
+
+        for (int j = 0; j < visibleDates.length; j++) {
+          if (j == 1) {
+            print("Toa Do");
+            print(x);
+            print(y);
+            print(_cellWidth);
+          }
+
+          var isLineInSpecialRegion = specialRegionBounds
+                      .where((element) =>
+                          (element.bound.top <= y &&
+                              element.bound.top + element.bound.height > y) &&
+                          (element.bound.left).round() <= x.round() &&
+                          (element.bound.left + element.bound.width).round() >
+                              x.round())
+                      .toList()
+                      .length >
+                  0
+              ? true
+              : false;
+
+          if (!isLineInSpecialRegion) {
+            final Offset start = Offset(isRTL ? 0 : x, y);
+            final Offset end = Offset(
+                isRTL ? size.width - (x + _cellWidth) : x + _cellWidth, y);
+
+            canvas.drawLine(start, end, _linePainter);
+          } else {
+            // Case line between
+            var _isLineBetweenSpecialRegionAndAppoinment = specialRegionBounds
+                        .where((element) =>
+                            (element.bound.top <= y - 3 &&
+                                element.bound.top + element.bound.height >
+                                    y - 3) &&
+                            (element.bound.left).round() <= x.round() &&
+                            (element.bound.left + element.bound.width).round() >
+                                x.round())
+                        .toList()
+                        .length >
+                    0
+                ? true
+                : false;
+            if (!_isLineBetweenSpecialRegionAndAppoinment) {
+              final Offset start = Offset(isRTL ? 0 : x, y);
+              final Offset end = Offset(
+                  isRTL ? size.width - (x + _cellWidth) : x + _cellWidth, y);
+              canvas.drawLine(start, end, _linePainter);
+            }
+          }
+          x += _cellWidth;
+        }
+      } else {
+        final Offset start = Offset(isRTL ? 0 : timeLabelWidth, y);
+        final Offset end =
+            Offset(isRTL ? size.width - timeLabelWidth : size.width, y);
+        var isLineInSpecialRegionY = specialRegionBounds
+                    .where((element) =>
+                        element.bound.top < y &&
+                        element.bound.top + element.bound.height > y)
+                    .toList()
+                    .length >
+                0
+            ? true
+            : false;
+
+        var a = specialRegionBounds
+            .where((element) =>
+                element.bound.top < y &&
+                element.bound.top + element.bound.height > y)
+            .toList();
+        if (!isLineInSpecialRegionY) {
+          print(a);
+          canvas.drawLine(start, end, _linePainter);
+        }
+      }
 
       y += timeIntervalHeight;
       if (y == size.height) {

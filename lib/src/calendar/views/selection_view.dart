@@ -53,9 +53,12 @@ class _SelectionPainter extends CustomPainter {
     final double timeLabelWidth =
         _getTimeLabelWidth(calendar.timeSlotViewSettings.timeRulerSize, view);
     double width = size.width;
+
     final bool isTimeline = _isTimelineView(view);
     if (view != CalendarView.month && !isTimeline) {
-      width -= timeLabelWidth;
+      // if (view != CalendarView.day) {
+      //   //width -= timeLabelWidth;
+      // }
     }
 
     final bool isResourceEnabled =
@@ -74,6 +77,10 @@ class _SelectionPainter extends CustomPainter {
       } else {
         _cellWidth = width / visibleDates.length;
         _cellHeight = timeIntervalHeight;
+
+        print("Duc");
+        print(width);
+        print(_cellWidth);
       }
     } else {
       _cellWidth = timeIntervalHeight;
@@ -180,17 +187,20 @@ class _SelectionPainter extends CustomPainter {
 
   void _drawDaySelection(
       Canvas canvas, Size size, double width, double timeLabelWidth) {
+    print("_drawDaySelection");
+    print(width);
     if (isSameDate(visibleDates[0], selectedDate)) {
       if (isRTL) {
         _xPosition = 0;
       } else {
-        _xPosition = timeLabelWidth;
+        _xPosition = 0; //timeLabelWidth;
       }
 
       selectedDate = _updateSelectedDate();
 
       _yPosition = _timeToPosition(calendar, selectedDate, timeIntervalHeight);
-      _drawSlotSelection(width + timeLabelWidth, size.height, canvas);
+      //_drawSlotSelection(width + 3 * timeLabelWidth, size.height, canvas);
+      _drawSlotSelection(width, size.height, canvas);
     }
   }
 
@@ -232,7 +242,8 @@ class _SelectionPainter extends CustomPainter {
           if (isRTL) {
             _xPosition = _cellWidth * (visibleDates.length - 1 - _rowIndex);
           } else {
-            _xPosition = timeLabelWidth + _cellWidth * _rowIndex;
+            //_xPosition = timeLabelWidth + _cellWidth * _rowIndex;
+            _xPosition = _cellWidth * _rowIndex;
           }
 
           selectedDate = _updateSelectedDate();
@@ -337,6 +348,7 @@ class _SelectionPainter extends CustomPainter {
   void _drawSlotSelection(double width, double height, Canvas canvas) {
     //// padding used to avoid first, last row and column selection clipping.
     const double padding = 0.5;
+    print(_cellWidth == width);
     Rect rect;
     rect = Rect.fromLTRB(
         _xPosition == 0 ? _xPosition + padding : _xPosition,

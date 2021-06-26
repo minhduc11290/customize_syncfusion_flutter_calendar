@@ -144,12 +144,13 @@ class _ViewHeaderViewPainter extends CustomPainter {
       width = labelWidth;
     }
 
-    xPosition = view == CalendarView.day ? 0 : timeLabelWidth;
+    xPosition = (view == CalendarView.day) ? 0 : timeLabelWidth;
     yPosition = 2;
     final double cellWidth = width / visibleDates.length;
     if (isRTL && view != CalendarView.day) {
       xPosition = size.width - timeLabelWidth - cellWidth;
     }
+
     for (int i = 0; i < visibleDates.length; i++) {
       _currentDate = visibleDates[i];
       _dayText = DateFormat(timeSlotViewSettings.dayFormat, locale)
@@ -189,7 +190,6 @@ class _ViewHeaderViewPainter extends CustomPainter {
       }
 
       _updateDayTextPainter(dayTextStyle, width);
-
       final TextSpan dateTextSpan = TextSpan(
         text: _dateText,
         style: dateTextStyle,

@@ -23,7 +23,8 @@ class _CalendarView extends StatefulWidget {
       this.isMobilePlatform,
       {Key key,
       this.updateCalendarState,
-      this.getCalendarState})
+      this.getCalendarState,
+      this.scroll})
       : super(key: key);
 
   final List<DateTime> visibleDates;
@@ -46,6 +47,8 @@ class _CalendarView extends StatefulWidget {
   final List<CalendarResource> resourceCollection;
   final double textScaleFactor;
   final bool isMobilePlatform;
+
+  final Function(double) scroll;
 
   @override
   _CalendarViewState createState() => _CalendarViewState();
@@ -98,6 +101,8 @@ class _CalendarViewState extends State<_CalendarView>
   /// Store the month widget instance used to update the month view
   /// when the visible appointment updated.
   _MonthViewWidget _monthView;
+
+  ValueNotifier<int> _currentTimeNotifier;
 
   @override
   void initState() {
@@ -176,6 +181,10 @@ class _CalendarViewState extends State<_CalendarView>
       _scrollToPosition();
     }
 
+    final DateTime today = DateTime.now();
+    _currentTimeNotifier = ValueNotifier<int>(
+        (today.day * 24 * 60) + (today.hour * 60) + today.minute);
+
     super.initState();
   }
 
@@ -233,9 +242,9 @@ class _CalendarViewState extends State<_CalendarView>
     /// Eg., if select the all day panel and switch to month view and again
     /// select the same month cell and move to day view then the view show
     /// calendar cell selection and all day panel selection.
-    if (oldWidget.view != widget.view) {
-      _allDaySelectionNotifier = ValueNotifier<_SelectionDetails>(null);
-    }
+    // if (oldWidget.view != widget.view) {
+    //   _allDaySelectionNotifier = ValueNotifier<_SelectionDetails>(null);
+    // }
 
     if ((oldWidget.view != widget.view ||
             oldWidget.width != widget.width ||
@@ -254,11 +263,92 @@ class _CalendarViewState extends State<_CalendarView>
       _selectedResourceIndex = 0;
     }
 
+    // if (oldWidget.calendar.showCurrentTimeIndicator !=
+    //     widget.calendar.showCurrentTimeIndicator) {
+    //   _position = 0;
+    //   _children.clear();
+    // }
+
+    // if (oldWidget.calendar.showCurrentTimeIndicator !=
+    //     widget.calendar.showCurrentTimeIndicator) {
+    //   _timer?.cancel();
+    //   _timer = _createTimer();
+    // }
+
     if (!_isResourceEnabled(widget.calendar.dataSource, widget.view)) {
       _selectedResourceIndex = -1;
     }
 
+    /// Clear the all day panel selection when the calendar view changed
+    /// Eg., if select the all day panel and switch to month view and again
+    /// select the same month cell and move to day view then the view show
+    /// calendar cell selection and all day panel selection.
+    if (oldWidget.view != widget.view) {
+      _allDaySelectionNotifier = ValueNotifier<_SelectionDetails>(null);
+
+      final DateTime today = DateTime.now();
+      _currentTimeNotifier = ValueNotifier<int>(
+          (today.day * 24 * 60) + (today.hour * 60) + today.minute);
+      // _timer?.cancel();
+      // _timer = null;
+    }
+
     super.didUpdateWidget(oldWidget);
+  }
+
+  // Timer? _createTimer() {
+  //   return widget.calendar.showCurrentTimeIndicator &&
+  //           widget.view != CalendarView.month &&
+  //           widget.view != CalendarView.timelineMonth
+  //       ? Timer.periodic(Duration(seconds: 1), (Timer t) {
+  //           final DateTime today = DateTime.now();
+  //           final DateTime viewEndDate =
+  //               widget.visibleDates[widget.visibleDates.length - 1];
+
+  //           /// Check the today date is in between visible date range and
+  //           /// today date hour and minute is 0(12 AM) because in day view
+  //           /// current time as Feb 16, 23.59 and changed to Feb 17 then view
+  //           /// will update both Feb 16 and 17 views.
+  //           if (!isDateWithInDateRange(
+  //                   widget.visibleDates[0], viewEndDate, today) &&
+  //               !(today.hour == 0 &&
+  //                   today.minute == 0 &&
+  //                   isSameDate(addDays(today, -1), viewEndDate))) {
+  //             return;
+  //           }
+
+  //           _currentTimeNotifier.value =
+  //               (today.day * 24 * 60) + (today.hour * 60) + today.minute;
+  //         })
+  //       : null;
+  // }
+
+  Widget _getCurrentTimeIndicator(
+      double timeLabelSize, double width, double height, bool isTimelineView) {
+    if (!widget.calendar.showCurrentTimeIndicator ||
+        widget.view == CalendarView.timelineMonth) {
+      return Container(
+        width: 0,
+        height: 0,
+      );
+    }
+
+    return RepaintBoundary(
+      child: CustomPaint(
+        painter: _CurrentTimeIndicator(
+          _timeIntervalHeight,
+          timeLabelSize,
+          widget.calendar.timeSlotViewSettings,
+          isTimelineView,
+          widget.visibleDates,
+          widget.calendar.todayHighlightColor ??
+              widget.calendarTheme.todayHighlightColor,
+          _isRTL,
+          _currentTimeNotifier,
+        ),
+        size: Size(width, height),
+      ),
+    );
   }
 
   @override
@@ -665,6 +755,10 @@ class _CalendarViewState extends State<_CalendarView>
 
       _timelineViewHeaderScrollController.jumpTo(_scrollController.offset);
     }
+
+    if (widget.scroll != null) {
+      widget.scroll(_scrollController.position.pixels);
+    }
   }
 
   void _updateTimeSlotView(_CalendarView oldWidget) {
@@ -1012,116 +1106,160 @@ class _CalendarViewState extends State<_CalendarView>
       panelHeight = 0;
     }
 
+    if (widget.view == CalendarView.week) {
+      // viewHeaderWidth = 0;
+      width = width - (timeLabelWidth < 50 ? 50 : timeLabelWidth);
+    }
+
     final double allDayExpanderHeight =
         panelHeight * _allDayExpanderAnimation.value;
-    return Stack(
+
+    return Container(
+        //color: Colors.red,
+        child: Stack(
       children: <Widget>[
-        _addAllDayAppointmentPanel(widget.calendarTheme, isCurrentView),
-        Positioned(
-          left: isRTL ? widget.width - viewHeaderWidth : 0,
-          top: 0,
-          right: isRTL ? 0 : widget.width - viewHeaderWidth,
-          height: _getViewHeaderHeight(
-              widget.calendar.viewHeaderHeight, widget.view),
-          child: Container(
-            color: widget.calendar.viewHeaderStyle.backgroundColor ??
-                widget.calendarTheme.viewHeaderBackgroundColor,
-            child: RepaintBoundary(
-              child: CustomPaint(
-                painter: _ViewHeaderViewPainter(
-                    widget.visibleDates,
-                    widget.view,
-                    widget.calendar.viewHeaderStyle,
-                    widget.calendar.timeSlotViewSettings,
-                    _getTimeLabelWidth(
-                        widget.calendar.timeSlotViewSettings.timeRulerSize,
-                        widget.view),
-                    _getViewHeaderHeight(
-                        widget.calendar.viewHeaderHeight, widget.view),
-                    widget.calendar.monthViewSettings,
-                    isRTL,
-                    widget.locale,
-                    widget.calendarTheme,
-                    widget.calendar.todayHighlightColor ??
-                        widget.calendarTheme.todayHighlightColor,
-                    widget.calendar.todayTextStyle,
-                    widget.calendar.cellBorderColor,
-                    widget.calendar.minDate,
-                    widget.calendar.maxDate,
-                    _viewHeaderNotifier,
-                    widget.textScaleFactor),
-              ),
-            ),
-          ),
-        ),
+        //_addAllDayAppointmentPanel(widget.calendarTheme, isCurrentView),
+        widget.view != CalendarView.day
+            ? Positioned(
+                left: isRTL ? widget.width - viewHeaderWidth : 50,
+                top: 0,
+                //right: isRTL ? 0 : widget.width - viewHeaderWidth,
+                right: 0,
+                height: _getViewHeaderHeight(
+                    widget.calendar.viewHeaderHeight, widget.view),
+                child: RepaintBoundary(
+                  child: CustomPaint(
+                    painter: _ViewHeaderViewPainter(
+                        widget.visibleDates,
+                        widget.view,
+                        widget.calendar.viewHeaderStyle,
+                        widget.calendar.timeSlotViewSettings,
+                        0,
+                        // _getTimeLabelWidth(
+                        //     widget
+                        //         .calendar.timeSlotViewSettings.timeRulerSize,
+                        //     widget.view),
+                        _getViewHeaderHeight(
+                            widget.calendar.viewHeaderHeight, widget.view),
+                        widget.calendar.monthViewSettings,
+                        isRTL,
+                        widget.locale,
+                        widget.calendarTheme,
+                        widget.calendar.todayHighlightColor ??
+                            widget.calendarTheme.todayHighlightColor,
+                        widget.calendar.todayTextStyle,
+                        widget.calendar.cellBorderColor,
+                        widget.calendar.minDate,
+                        widget.calendar.maxDate,
+                        _viewHeaderNotifier,
+                        widget.textScaleFactor),
+                  ),
+                ),
+              )
+            : Container(),
         Positioned(
             top: (widget.view == CalendarView.day)
                 ? viewHeaderHeight + allDayExpanderHeight
                 : viewHeaderHeight + _allDayHeight + allDayExpanderHeight,
-            left: 0,
+            left: (widget.view == CalendarView.day)
+                ? 0
+                : (timeLabelWidth < 50 ? 50 : timeLabelWidth),
             right: 0,
             bottom: 0,
             child: Container(
-                child: Scrollbar(
-              child: ListView(
-                  padding: const EdgeInsets.all(0.0),
-                  controller: _scrollController,
-                  scrollDirection: Axis.vertical,
-                  physics: const ClampingScrollPhysics(),
-                  children: <Widget>[
-                    Stack(children: <Widget>[
-                      RepaintBoundary(
-                          child: _CalendarMultiChildContainer(
-                              width: width,
-                              height: height,
-                              children: [
-                            RepaintBoundary(
-                              child: _TimeSlotWidget(
-                                  widget.visibleDates,
-                                  _horizontalLinesCount,
-                                  _timeIntervalHeight,
-                                  timeLabelWidth,
-                                  widget.calendar.cellBorderColor,
-                                  widget.calendarTheme,
-                                  widget.calendar.timeSlotViewSettings,
-                                  isRTL,
-                                  widget.regions,
-                                  _calendarCellNotifier,
-                                  widget.textScaleFactor,
-                                  widget.calendar.timeRegionBuilder,
-                                  width,
-                                  height),
-                            ),
-                            RepaintBoundary(
-                                child: _addAppointmentPainter(width, height)),
-                          ])),
-                      RepaintBoundary(
-                        child: CustomPaint(
-                          painter: _TimeRulerView(
-                              _horizontalLinesCount,
-                              _timeIntervalHeight,
-                              widget.calendar.timeSlotViewSettings,
-                              widget.calendar.cellBorderColor,
-                              isRTL,
-                              widget.locale,
-                              widget.calendarTheme,
-                              _isTimelineView(widget.view),
-                              widget.visibleDates,
-                              widget.textScaleFactor),
-                          size: Size(timeLabelWidth, height),
-                        ),
-                      ),
-                      RepaintBoundary(
-                        child: CustomPaint(
+                //color: Colors.blue,
+                child: Stack(children: [
+              // RepaintBoundary(
+              //   child: CustomPaint(
+              //     painter: _TimeRulerView(
+              //         _horizontalLinesCount,
+              //         _timeIntervalHeight,
+              //         widget.calendar.timeSlotViewSettings,
+              //         widget.calendar.cellBorderColor,
+              //         isRTL,
+              //         widget.locale,
+              //         widget.calendarTheme,
+              //         _isTimelineView(widget.view),
+              //         widget.visibleDates,
+              //         widget.textScaleFactor),
+              //     size: Size(timeLabelWidth, height),
+              //   ),
+              // ),
+              Scrollbar(
+                child: ListView(
+                    padding: const EdgeInsets.all(0.0),
+                    controller: _scrollController,
+                    scrollDirection: Axis.vertical,
+                    physics: const ClampingScrollPhysics(),
+                    children: <Widget>[
+                      Container(
+                          child: Stack(children: <Widget>[
+                        RepaintBoundary(
+                            child: CustomPaint(
                           painter: _addSelectionView(),
-                          size: Size(width, height),
-                        ),
-                      ),
-                    ])
-                  ]),
-            ))),
+                          size: Size(
+                              width +
+                                  (widget.view == CalendarView.day
+                                      ? timeLabelWidth
+                                      : timeLabelWidth),
+                              height),
+                        )),
+                        RepaintBoundary(
+                            child: _CalendarMultiChildContainer(
+                                width: width,
+                                height: height,
+                                children: [
+                              RepaintBoundary(
+                                child: _TimeSlotWidget(
+                                    widget.visibleDates,
+                                    _horizontalLinesCount,
+                                    _timeIntervalHeight,
+                                    widget.view == CalendarView.day ? 0 : 0,
+                                    widget.calendar.cellBorderColor,
+                                    widget.calendarTheme,
+                                    widget.calendar.timeSlotViewSettings,
+                                    isRTL,
+                                    widget.regions,
+                                    _calendarCellNotifier,
+                                    widget.textScaleFactor,
+                                    widget.calendar.timeRegionBuilder,
+                                    width,
+                                    height,
+                                    widget.view),
+                              ),
+                              RepaintBoundary(
+                                  child: _addAppointmentPainter(width, height)),
+                            ])),
+                        // RepaintBoundary(
+                        //   child: CustomPaint(
+                        //     painter: _TimeRulerView(
+                        //         _horizontalLinesCount,
+                        //         _timeIntervalHeight,
+                        //         widget.calendar.timeSlotViewSettings,
+                        //         widget.calendar.cellBorderColor,
+                        //         isRTL,
+                        //         widget.locale,
+                        //         widget.calendarTheme,
+                        //         _isTimelineView(widget.view),
+                        //         widget.visibleDates,
+                        //         widget.textScaleFactor),
+                        //     size: Size(timeLabelWidth, height),
+                        //   ),
+                        // ),
+
+                        _getCurrentTimeIndicator(
+                            widget.view == CalendarView.day
+                                ? -timeLabelWidth
+                                : 0,
+                            widget.view == CalendarView.day ? width : width,
+                            height,
+                            false),
+                      ]))
+                    ]),
+              )
+            ]))),
       ],
-    );
+    ));
   }
 
   /// Updates the cell selection when the initial display date property of
@@ -1143,6 +1281,7 @@ class _CalendarViewState extends State<_CalendarView>
 
   // Returns the timeline view  as a child for the calendar view.
   Widget _addTimelineView(double width, double height, String locale) {
+    width = width;
     final double viewHeaderHeight =
         _getViewHeaderHeight(widget.calendar.viewHeaderHeight, widget.view);
     final double timeLabelSize = _getTimeLabelWidth(
@@ -1615,7 +1754,7 @@ class _CalendarViewState extends State<_CalendarView>
     DateTime selectedDate = _updateCalendarStateDetails._selectedDate;
     final double timeLabelWidth = _getTimeLabelWidth(
         widget.calendar.timeSlotViewSettings.timeRulerSize, widget.view);
-
+    print(timeLabelWidth);
     final double viewHeaderHeight = widget.view == CalendarView.day
         ? 0
         : _getViewHeaderHeight(widget.calendar.viewHeaderHeight, widget.view);
@@ -1787,11 +1926,16 @@ class _CalendarViewState extends State<_CalendarView>
         _updateCalendarStateDetails._selectedDate = null;
       }
     } else {
+      print("handleTap");
+      print(xDetails);
+      print(yDetails);
+      xDetails = xDetails - (widget.view == CalendarView.week ? 50 : 0);
       final double yPosition =
           yDetails - viewHeaderHeight - allDayHeight + _scrollController.offset;
       final _AppointmentView appointmentView = _appointmentLayoutKey
           .currentState
           ._getAppointmentViewOnPoint(xDetails, yPosition);
+      print("appointmentView");
       _allDaySelectionNotifier?.value = null;
       if (appointmentView == null) {
         if (_isRTL) {
