@@ -1119,6 +1119,7 @@ class _CalendarViewState extends State<_CalendarView>
         child: Stack(
       children: <Widget>[
         //_addAllDayAppointmentPanel(widget.calendarTheme, isCurrentView),
+
         widget.view != CalendarView.day
             ? Positioned(
                 left: isRTL ? widget.width - viewHeaderWidth : 50,
@@ -1157,6 +1158,23 @@ class _CalendarViewState extends State<_CalendarView>
                 ),
               )
             : Container(),
+        Positioned(
+            left: 0,
+            top: 0,
+            width: 50,
+            height: _getViewHeaderHeight(
+                widget.calendar.viewHeaderHeight, widget.view),
+            child: widget.view != CalendarView.day
+                ? Container(
+                    decoration: BoxDecoration(
+                      color: Colors.transparent,
+                      border: Border(
+                        top: BorderSide(color: Color(0xFFE4E4E4)),
+                        bottom: BorderSide(color: Color(0xFFE4E4E4)),
+                      ),
+                    ),
+                  )
+                : Container()),
         Positioned(
             top: (widget.view == CalendarView.day)
                 ? viewHeaderHeight + allDayExpanderHeight
@@ -1230,23 +1248,6 @@ class _CalendarViewState extends State<_CalendarView>
                               RepaintBoundary(
                                   child: _addAppointmentPainter(width, height)),
                             ])),
-                        // RepaintBoundary(
-                        //   child: CustomPaint(
-                        //     painter: _TimeRulerView(
-                        //         _horizontalLinesCount,
-                        //         _timeIntervalHeight,
-                        //         widget.calendar.timeSlotViewSettings,
-                        //         widget.calendar.cellBorderColor,
-                        //         isRTL,
-                        //         widget.locale,
-                        //         widget.calendarTheme,
-                        //         _isTimelineView(widget.view),
-                        //         widget.visibleDates,
-                        //         widget.textScaleFactor),
-                        //     size: Size(timeLabelWidth, height),
-                        //   ),
-                        // ),
-
                         _getCurrentTimeIndicator(
                             widget.view == CalendarView.day
                                 ? -timeLabelWidth

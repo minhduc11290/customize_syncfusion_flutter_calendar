@@ -58,9 +58,6 @@ class _ViewHeaderViewPainter extends CustomPainter {
 
     final DateTime today = DateTime.now();
     if (view != CalendarView.month) {
-      _addViewHeaderForTimeSlotViews(
-          canvas, size, viewHeaderDayStyle, viewHeaderDateStyle, width, today);
-    } else {
       final Paint painter = Paint()
         ..color = Colors.grey
         ..strokeWidth = 0.5
@@ -69,6 +66,9 @@ class _ViewHeaderViewPainter extends CustomPainter {
       canvas.drawLine(Offset(0, 0), Offset(size.width, 0), painter);
       canvas.drawLine(
           Offset(0, size.height), Offset(size.width, size.height), painter);
+      _addViewHeaderForTimeSlotViews(
+          canvas, size, viewHeaderDayStyle, viewHeaderDateStyle, width, today);
+    } else {
       _addViewHeaderForMonthView(
           canvas, size, viewHeaderDayStyle, width, today);
     }
