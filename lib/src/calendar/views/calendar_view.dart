@@ -1169,8 +1169,8 @@ class _CalendarViewState extends State<_CalendarView>
                     decoration: BoxDecoration(
                       color: Colors.transparent,
                       border: Border(
-                        top: BorderSide(color: Color(0xFFE4E4E4)),
-                        bottom: BorderSide(color: Color(0xFFE4E4E4)),
+                        top: BorderSide(color: Colors.grey, width: 1),
+                        bottom: BorderSide(color: Colors.grey, width: 1),
                       ),
                     ),
                   )
