@@ -60,7 +60,7 @@ class _ViewHeaderViewPainter extends CustomPainter {
     if (view != CalendarView.month) {
       final Paint painter = Paint()
         ..color = Colors.grey
-        ..strokeWidth = 1
+        ..strokeWidth = 0.5
         ..isAntiAlias = true
         ..style = PaintingStyle.fill;
       canvas.drawLine(Offset(0, 0), Offset(size.width, 0), painter);
